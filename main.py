@@ -14,6 +14,6 @@ app.add_middleware(
   allow_headers=["*"],
 )
 
-@app.get('/')
+@app.get('/movie')
 def index():
-  return { "value": "Hello World" }
+  return { "value": "Movie" }
