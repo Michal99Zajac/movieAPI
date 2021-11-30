@@ -69,4 +69,19 @@ def get_random_page(url):
 def get_title_from_discover(url):
     genre_movie_request = requests.get(url)
     return genre_movie_request.json()["results"][0]["title"]
-    
+
+@app.get('/movie/type')
+def get_type(movie):
+    url = f"{API_URL}search/movie{API_KEY}&query={movie}"
+    movie_type_request = requests.get(url)
+    genre_ids = movie_type_request.json()["results"][0]["genre_ids"]
+    genres = get_genres_by_ids(genre_ids)
+    return { "value": ", ".join(genres) }
+
+def get_genres_by_ids(genre_ids):
+    genres = []
+    for id in genre_ids:
+        for genre in GENRES:
+            if genre["id"] == id:
+                genres.append(genre["name"])
+    return genres
