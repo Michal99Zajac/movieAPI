@@ -7,6 +7,7 @@ app = FastAPI()
 
 origins = [ "*" ]
 
+# cors
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -15,11 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# const
 API_KEY = "?api_key=159c3b33615afa1b3e782c8c1377013a"
 API_URL = "https://api.themoviedb.org/3/"
 MAX_ID = requests.get(f"{API_URL}movie/latest{API_KEY}").json()["id"]
 GENRES = requests.get(f"{API_URL}genre/movie/list{API_KEY}").json()["genres"]
 
+# enpoints
 @app.get('/movie')
 def get_movie(genre: str = "", rating: float = 0):
     if genre == "" and rating == 0:
@@ -28,6 +31,40 @@ def get_movie(genre: str = "", rating: float = 0):
         return get_genre_movie(genre, rating)
     return {}
 
+@app.get('/movie/type')
+def get_type(movie):
+    url = f"{API_URL}search/movie{API_KEY}&query={movie}"
+    movie_type_request = requests.get(url)
+    if movie_type_request.json()["total_results"] > 0:
+        genre_ids = movie_type_request.json()["results"][0]["genre_ids"]
+        genres = get_genres_by_ids(genre_ids)
+        return { "value": ", ".join(genres) }
+    return {}
+
+@app.get('/movies/all')
+def get_actor_movies(actor):
+    is_actor_found, titles = get_actor_titles(actor)
+    if is_actor_found:
+        return {"value": ", ".join(titles)}
+    return {}
+
+@app.get('/movies')
+def get_actor_movies_count(actor):
+    is_actor_found, titles = get_actor_titles(actor)
+    if is_actor_found:
+        return {"value": titles[0], "count": len(titles)}
+    return {}
+
+@app.get('/played')
+def has_actor_played_in(actor, movie):
+    is_actor_found, titles = get_actor_titles(actor)
+    if is_actor_found:
+        lowercase_titles = [title.lower() for title in titles]
+        if movie.lower() in lowercase_titles:
+            return { "value": True }
+    return {}
+
+# helpers
 def get_random_movie():
     random_movie_request = make_random_movie_request()
     while random_movie_request.status_code == 404:
@@ -53,7 +90,6 @@ def get_genre_movie(genre, rating):
 
     return get_title_with_genre_and_rating(genre_id, rating)
 
-
 def get_title_with_genre_and_rating(genre_id, rating):
     page = get_random_page(f"{API_URL}discover/movie{API_KEY}&with_genres={genre_id}&vote_average.gte={rating}")
     title = get_title_from_discover(f"{API_URL}discover/movie{API_KEY}&with_genres={genre_id}&vote_average.gte={rating}&page={page}")
@@ -68,16 +104,6 @@ def get_title_from_discover(url):
     genre_movie_request = requests.get(url)
     return genre_movie_request.json()["results"][0]["title"]
 
-@app.get('/movie/type')
-def get_type(movie):
-    url = f"{API_URL}search/movie{API_KEY}&query={movie}"
-    movie_type_request = requests.get(url)
-    if movie_type_request.json()["total_results"] > 0:
-        genre_ids = movie_type_request.json()["results"][0]["genre_ids"]
-        genres = get_genres_by_ids(genre_ids)
-        return { "value": ", ".join(genres) }
-    return {}
-
 def get_genres_by_ids(genre_ids):
     genres = []
     for id in genre_ids:
@@ -85,20 +111,6 @@ def get_genres_by_ids(genre_ids):
             if genre["id"] == id:
                 genres.append(genre["name"])
     return genres
-
-@app.get('/movies/all')
-def get_actor_movies(actor):
-    is_actor_found, titles = get_actor_titles(actor)
-    if is_actor_found:
-        return {"value": ", ".join(titles)}
-    return {}
-
-@app.get('/movies/')
-def get_actor_movies_count(actor):
-    is_actor_found, titles = get_actor_titles(actor)
-    if is_actor_found:
-        return {"value": titles[0], "count": len(titles)}
-    return {}
 
 def get_actor_titles(actor):
     actor_url = f"{API_URL}search/person{API_KEY}&query={actor}"
@@ -121,12 +133,3 @@ def get_entity_id(url):
         is_entity_found = True
         return is_entity_found, request.json()["results"][0]["id"]
     return is_entity_found, id
-
-@app.get('/played')
-def has_actor_played_in(actor, movie):
-    is_actor_found, titles = get_actor_titles(actor)
-    if is_actor_found:
-        lowercase_titles = [title.lower() for title in titles]
-        if movie in lowercase_titles:
-            return { "value": True }
-    return {}
