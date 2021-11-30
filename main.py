@@ -1,17 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+import requests
+import random
 
 app = FastAPI()
 
 origins = [ "*" ]
 
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins=origins,
-  allow_credentials=True,
-  allow_methods=["*"],
-  allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -47,12 +48,12 @@ def get_genre_movie(genre, rating):
             id = g["id"]
             genre_found = True
             break
-    
+
     if not genre_found:
         return {}
-    
+
     return get_title_with_genre_and_rating(genre, rating)
-        
+
 
 def get_title_with_genre_and_rating(genre, rating):
     page = get_random_page(f"{API_URL}discover/movie{API_KEY}&with_genres={id}&vote_average.gte={rating}")
