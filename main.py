@@ -85,3 +85,14 @@ def get_genres_by_ids(genre_ids):
             if genre["id"] == id:
                 genres.append(genre["name"])
     return genres
+
+@app.get('/movies/all')
+def get_actor_movies(actor):
+    actor_url = f"{API_URL}search/person{API_KEY}&query={actor}"
+    actor_id = requests.get(actor_url).json()["results"][0]["id"]
+    movies_url = f"{API_URL}person/{actor_id}/movie_credits{API_KEY}&query={actor}"
+    movies = requests.get(movies_url).json()["cast"]
+    titles = []
+    for movie in movies:
+        titles.append(movie["title"])
+    return {"value": ", ".join(titles)}
