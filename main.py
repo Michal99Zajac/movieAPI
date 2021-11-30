@@ -123,3 +123,12 @@ def get_entity_id(url):
         is_entity_found = True
         return is_entity_found, request.json()["results"][0]["id"]
     return is_entity_found, id
+
+@app.get('/played')
+def has_actor_played_in(actor, movie):
+    is_actor_found, titles = get_actor_titles(actor)
+    if is_actor_found:
+        lowercase_titles = [title.lower() for title in titles]
+        if movie in lowercase_titles:
+            return { "value": True }
+    return {}
