@@ -24,6 +24,13 @@ MAX_ID = requests.get(f"{API_URL}movie/latest{API_KEY}").json()["id"]
 GENRES = requests.get(f"{API_URL}genre/movie/list{API_KEY}").json()["genres"]
 
 @app.get('/movie')
+def get_movie(genre: str = "", rating: float = 0):
+    if genre == "" and rating == 0:
+        return get_random_movie()
+    if genre != "" and rating >= 0 and rating < 10:
+        return get_genre_movie(genre, rating)
+    return {}
+
 def get_random_movie():
     random_movie_request = make_random_movie_request()
     while random_movie_request.status_code == 404:
@@ -35,8 +42,7 @@ def make_random_movie_request():
     id = random.randrange(0, MAX_ID)
     return requests.get(f"{API_URL}movie/{id}{API_KEY}")
 
-@app.get('/movie/genre/{genre}')
-def get_genre_movie(genre):
+def get_genre_movie(genre, rating):
     genre_found = False
     for g in GENRES:
         if genre.lower() == g["name"].lower():
@@ -44,18 +50,23 @@ def get_genre_movie(genre):
             genre_found = True
             break
     
-    if genre_found:
-        page = get_random_page(id)
-        title = get_title_from_genre(id, page)
-        return { "value": title }
-    return {"value": "This genre does not exist in our database."}
+    if not genre_found:
+        return {}
+    
+    return get_title_with_genre_and_rating(genre, rating)
+        
 
-def get_random_page(id):
-    genre_movie_request = requests.get(f"{API_URL}discover/movie{API_KEY}&with_genres={id}")
+def get_title_with_genre_and_rating(genre, rating):
+    page = get_random_page(f"{API_URL}discover/movie{API_KEY}&with_genres={id}&vote_average.gte={rating}")
+    title = get_title_from_discover(f"{API_URL}discover/movie{API_KEY}&with_genres={id}&vote_average.gte={rating}&page={page}")
+    return { "value": title }
+
+def get_random_page(url):
+    genre_movie_request = requests.get(url)
     total_pages = genre_movie_request.json()["total_pages"]
     return random.randrange(1, total_pages)
 
-def get_title_from_genre(id, page):
-    genre_movie_request = requests.get(f"{API_URL}discover/movie{API_KEY}&with_genres={id}&page={page}")
+def get_title_from_discover(url):
+    genre_movie_request = requests.get(url)
     return genre_movie_request.json()["results"][0]["title"]
     
