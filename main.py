@@ -15,8 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
 API_KEY = "?api_key=159c3b33615afa1b3e782c8c1377013a"
 API_URL = "https://api.themoviedb.org/3/"
 MAX_ID = requests.get(f"{API_URL}movie/latest{API_KEY}").json()["id"]
@@ -43,21 +41,22 @@ def make_random_movie_request():
 
 def get_genre_movie(genre, rating):
     genre_found = False
+    genre_id = ''
     for g in GENRES:
         if genre.lower() == g["name"].lower():
-            id = g["id"]
+            genre_id = g["id"]
             genre_found = True
             break
 
     if not genre_found:
         return {}
 
-    return get_title_with_genre_and_rating(genre, rating)
+    return get_title_with_genre_and_rating(genre_id, rating)
 
 
-def get_title_with_genre_and_rating(genre, rating):
-    page = get_random_page(f"{API_URL}discover/movie{API_KEY}&with_genres={id}&vote_average.gte={rating}")
-    title = get_title_from_discover(f"{API_URL}discover/movie{API_KEY}&with_genres={id}&vote_average.gte={rating}&page={page}")
+def get_title_with_genre_and_rating(genre_id, rating):
+    page = get_random_page(f"{API_URL}discover/movie{API_KEY}&with_genres={genre_id}&vote_average.gte={rating}")
+    title = get_title_from_discover(f"{API_URL}discover/movie{API_KEY}&with_genres={genre_id}&vote_average.gte={rating}&page={page}")
     return { "value": title }
 
 def get_random_page(url):
